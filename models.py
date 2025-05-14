@@ -181,7 +181,7 @@ class ResBlock2(torch.nn.Module):
 class Generator(torch.nn.Module):
         
     def __init__(self, h):
-        super(BigVGAN, self).__init__()
+        super(Generator, self).__init__()
         self.h = h
 
         self.num_kernels = len(h.resblock_kernel_sizes)

@@ -277,7 +277,7 @@ def main():
     parser.add_argument('--input_validation_file', default='LJSpeech-1.1/validation.txt')
     parser.add_argument('--checkpoint_path', default='cp_hifigan_MED_MRD')
     parser.add_argument('--config', default='')
-    parser.add_argument('--training_epochs', default=30, type=int)
+    parser.add_argument('--training_epochs', default=3000, type=int)
     parser.add_argument('--stdout_interval', default=5, type=int)
     parser.add_argument('--checkpoint_interval', default=1000, type=int)
     parser.add_argument('--summary_interval', default=100, type=int)
