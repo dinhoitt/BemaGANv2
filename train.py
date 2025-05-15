@@ -21,32 +21,32 @@ torch.backends.cudnn.benchmark = True
 
 
 def train(rank, a, h):
-    # 분산 훈련 환경 설정
-    # gpu의 개수가 1보다 큰 경우 분산 환경을 초기화
+    # Set up distributed training environment
+    # Initialize distributed training if using more than one GPU
     if h.num_gpus > 1:
         init_process_group(backend=h.dist_config['dist_backend'], init_method=h.dist_config['dist_url'],
                            world_size=h.dist_config['world_size'] * h.num_gpus, rank=rank)
 
-    torch.cuda.manual_seed(h.seed) # CUDA를 위한 난수 설정
-    device = torch.device('cuda:{:d}'.format(rank)) # 현재 프로세스의 device 설정
+    torch.cuda.manual_seed(h.seed) # Set CUDA random seed
+    device = torch.device('cuda:{:d}'.format(rank)) # Set device for current process
 
-    # 생성기, mrd, med 초기화 
+    # Initialize generator, MED, and MRD
     generator = Generator(h).to(device)
     mrd = MultiResolutionDiscriminator(h).to(device)
     med = MultiEnvelopeDiscriminator().to(device)
 
-    # checkpoint 경로 설정 
+    # Create checkpoint path
     if rank == 0:
         print(generator)
         os.makedirs(a.checkpoint_path, exist_ok=True)
         print("checkpoints directory : ", a.checkpoint_path)
 
-    # 체크포인트 스캔(기존에 훈련된 모델이 있다면 해당 체크 포인트를 로드 )
+    # Scan checkpoints (load previously trained models if exist)
     if os.path.isdir(a.checkpoint_path):
         cp_g = scan_checkpoint(a.checkpoint_path, 'g_')
         cp_do = scan_checkpoint(a.checkpoint_path, 'do_')
 
-    # training 준비
+    # Prepare training
     steps = 0 
     if cp_g is None or cp_do is None:
         state_dict_do = None
@@ -60,65 +60,65 @@ def train(rank, a, h):
         steps = state_dict_do['steps'] + 1
         last_epoch = state_dict_do['epoch']
 
-    # 분산 데이터 병렬 처리
+    # Distributed data parallel processing
     if h.num_gpus > 1:
         generator = DistributedDataParallel(generator, device_ids=[rank]).to(device)
         mrd = DistributedDataParallel(mrd, device_ids=[rank]).to(device)
         med = DistributedDataParallel(med, device_ids=[rank]).to(device)
 
-    # 생성기와 판별기의 optimizer 설정(AdamW)
-    # 스케쥴러 설정
+    # Set up optimizer for generator and discriminator (AdamW)
+    # Set up scheduler
     optim_g = torch.optim.AdamW(generator.parameters(), h.learning_rate, betas=[h.adam_b1, h.adam_b2])
     optim_d = torch.optim.AdamW(itertools.chain(med.parameters(), mrd.parameters()),
                                 h.learning_rate, betas=[h.adam_b1, h.adam_b2])
 
-    # 체크포인트에서 옵티마이저 상태 복원
+    # Restore optimizer state from checkpoint
     if state_dict_do is not None:
         optim_g.load_state_dict(state_dict_do['optim_g'])
         optim_d.load_state_dict(state_dict_do['optim_d'])
 
-    # learning rate scheduler 설정
+    # Set up learning rate scheduler
     scheduler_g = torch.optim.lr_scheduler.ExponentialLR(optim_g, gamma=h.lr_decay, last_epoch=last_epoch)
     scheduler_d = torch.optim.lr_scheduler.ExponentialLR(optim_d, gamma=h.lr_decay, last_epoch=last_epoch)
 
-    # 훈련 및 검증 데이터 준비
+    # Prepare training and validation data
     training_filelist, validation_filelist = get_dataset_filelist(a)
 
-    # 트레인set 준비
+    # Prepare training set
     trainset = MelDataset(training_filelist, h.segment_size, h.n_fft, h.num_mels,
                           h.hop_size, h.win_size, h.sampling_rate, h.fmin, h.fmax, n_cache_reuse=0,
                           shuffle=False if h.num_gpus > 1 else True, fmax_loss=h.fmax_for_loss, device=device,
                           fine_tuning=a.fine_tuning, base_mels_path=a.input_mels_dir)
 
-    # train set을 sampler
+    # train set sampler
     train_sampler = DistributedSampler(trainset) if h.num_gpus > 1 else None
 
-    # 데이터 로드 
+    # Load data
     train_loader = DataLoader(trainset, num_workers=h.num_workers, shuffle=False,
                               sampler=train_sampler,
                               batch_size=h.batch_size,
                               pin_memory=True,
                               drop_last=True)
 
-    # 검증 데이터 로드 설정
+    # Load validation data
     if rank == 0:
         validset = MelDataset(validation_filelist, h.segment_size, h.n_fft, h.num_mels,
                               h.hop_size, h.win_size, h.sampling_rate, h.fmin, h.fmax, False, False, n_cache_reuse=0,
                               fmax_loss=h.fmax_for_loss, device=device, fine_tuning=a.fine_tuning,
                               base_mels_path=a.input_mels_dir)
 
-        # DataLoader를 사용하여 검증 데이터셋에서 배치를 생성
-        # 각 배치에서 단일 샘플을 처리
+        # Create validation data loader
+        # Process single sample in each batch
         validation_loader = DataLoader(validset, num_workers=1, shuffle=False,
                                        sampler=None,
                                        batch_size=1,
                                        pin_memory=True,
                                        drop_last=True)
 
-        # TensorBoard 로깅을 위한 SummaryWriter를 초기화
+        # Initialize SummaryWriter for TensorBoard logging
         sw = SummaryWriter(os.path.join(a.checkpoint_path, 'logs'))
 
-    # 모델을 훈련 모드로 설정
+    # Set model to training mode
     generator.train()
     mrd.train()
     med.train()
@@ -128,7 +128,7 @@ def train(rank, a, h):
                         'Mel-Spec, Error': [],
                         's/b':[]}
     df = pd.DataFrame(data)
-    # 훈련 진행
+    # Train progress
     for epoch in range(max(0, last_epoch), a.training_epochs):
         if rank == 0:
             start = time.time()
@@ -139,14 +139,14 @@ def train(rank, a, h):
         
         
                 
-        # 훈련 데이터 로더를 이용해 배치 단위로 데이터를 가져오며 훈련 과정을 수행
+        # Use training data loader to fetch data in batch units and perform training process
         for i, batch in enumerate(train_loader):
-            # 0번 랭크에서만 배치 처리 시작 시간
+            # Start time for batch processing on rank 0
             if rank == 0:
                 start_b = time.time()
-            # x : 입력
-            # y : 목표 출력
-            # y_mel(mel-spectrogram) 추출
+            # x : input
+            # y : target output
+            # y_mel(mel-spectrogram) extraction
             x, y, _, y_mel = batch
             x = torch.autograd.Variable(x.to(device, non_blocking=True))
             y = torch.autograd.Variable(y.to(device, non_blocking=True))
@@ -157,7 +157,7 @@ def train(rank, a, h):
             y_g_hat_mel = mel_spectrogram(y_g_hat.squeeze(1), h.n_fft, h.num_mels, h.sampling_rate, h.hop_size, h.win_size,
                                           h.fmin, h.fmax_for_loss)
 
-            optim_d.zero_grad() # 생성기와 판별기의 손실 함수 초기화
+            optim_d.zero_grad() # Initialize loss functions for generator and discriminator
 
             # MRD
             y_df_hat_r, y_df_hat_g, _, _ = mrd(y, y_g_hat.detach())
@@ -167,26 +167,26 @@ def train(rank, a, h):
             y_ds_hat_r, y_ds_hat_g, _, _ = med(y, y_g_hat.detach())
             loss_disc_s, losses_disc_s_r, losses_disc_s_g = discriminator_loss(y_ds_hat_r, y_ds_hat_g)
 
-            loss_disc_all = loss_disc_s + loss_disc_f # MED와 MRD의 손실을 합함
+            loss_disc_all = loss_disc_s + loss_disc_f # Sum of MED and MRD losses
 
-            loss_disc_all.backward() # 판별기 손실에 대해 역전파를 수행
+            loss_disc_all.backward() # Backpropagation for discriminator loss
             optim_d.step()
 
             # Generator
-            optim_g.zero_grad() # 생성기 손실함수 초기화
+            optim_g.zero_grad() # Initialize generator loss functions
 
             # L1 Mel-Spectrogram Loss
             loss_mel = F.l1_loss(y_mel, y_g_hat_mel) * 45
-            # mrd와 med를 사용하여 생성된 오디오에 대해서 predict 수행
+            # Perform prediction using mrd and med for generated audio
             y_df_hat_r, y_df_hat_g, fmap_f_r, fmap_f_g = mrd(y, y_g_hat)
             y_ds_hat_r, y_ds_hat_g, fmap_s_r, fmap_s_g = med(y, y_g_hat)
-            # feature map loss를 계산 
+            # Calculate feature map loss
             loss_fm_f = feature_loss(fmap_f_r, fmap_f_g)
             loss_fm_s = feature_loss(fmap_s_r, fmap_s_g)
-            # 생성기에 대한 손실을 계산
+            # Calculate generator loss
             loss_gen_f, losses_gen_f = generator_loss(y_df_hat_g)
             loss_gen_s, losses_gen_s = generator_loss(y_ds_hat_g)
-            # 전체 생성기 loss의 합 
+            # Sum of generator loss
             loss_gen_all = loss_gen_s + loss_gen_f + loss_fm_s + loss_fm_f + loss_mel
 
             loss_gen_all.backward()
@@ -203,10 +203,10 @@ def train(rank, a, h):
                     new_row = {'epoch': epoch, 'Steps': steps, 'Gen Loss Total': loss_gen_all, 'Mel-Spec Error': mel_error, 's/b': time.time() - start_b}
                     new_df = pd.DataFrame([new_row])
 
-                    # 새로운 데이터프레임을 기존 데이터프레임에 추가
+                    # Add new dataframe to existing dataframe
                     df = pd.concat(([df, new_df]), ignore_index=True)
 
-                # checkpointing
+                # Checkpointing
                 if steps % a.checkpoint_interval == 0 and steps != 0:
                     checkpoint_path = "{}/g_{:08d}".format(a.checkpoint_path, steps)
                     save_checkpoint(checkpoint_path,
@@ -260,7 +260,7 @@ def train(rank, a, h):
         
         if rank == 0:
             print('Time taken for epoch {} is {} sec\n'.format(epoch + 1, int(time.time() - start)))
-    # CSV 파일로 저장
+    # Save to CSV file
     file_path = 'data_BemaGanv2.csv'
     df.to_csv(file_path, index=False)
 
