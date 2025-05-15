@@ -261,7 +261,7 @@ def train(rank, a, h):
         if rank == 0:
             print('Time taken for epoch {} is {} sec\n'.format(epoch + 1, int(time.time() - start)))
     # CSV 파일로 저장
-    file_path = 'data_MED_MRD_snake.csv'
+    file_path = 'data_BemaGanv2.csv'
     df.to_csv(file_path, index=False)
 
 

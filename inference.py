@@ -11,7 +11,7 @@ import torch
 from scipy.io.wavfile import write
 from env import AttrDict
 from meldataset import mel_spectrogram, MAX_WAV_VALUE
-from models import BigVGAN
+from models import Generator
 import librosa
 
 h = None
@@ -40,7 +40,7 @@ def scan_checkpoint(cp_dir, prefix):
 
 
 def inference(a, h):
-    generator = BigVGAN(h).to(device)
+    generator = Generator(h).to(device)
 
     state_dict_g = load_checkpoint(a.checkpoint_file, device)
     generator.load_state_dict(state_dict_g['generator'])

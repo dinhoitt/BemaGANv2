@@ -53,6 +53,10 @@ python train.py --config config_v1.json
 Checkpoints and copy of the configuration file are saved in `cp_BemaGanv2_MED_MRD` directory by default.<br>
 You can change the path by adding `--checkpoint_path` option.
 
+![training gen_loss_total](./training_gen_loss_total.png) ![training mel_spec_error](./training_mel_spec_error.png)
+
+![validation mel_spec_error](./validation_mel_spec_error.png)
+
 ## Inference from wav file
 1. Make `test_files` directory and copy wav files into the directory.
 2. Run the following command.
