@@ -1,6 +1,6 @@
 # BemaGANv2: A Vocoder with Superior Periodicity Capture for Long-Term Audio Generation
 
-### Taesoo Park, Mungwi Jeong, Mingy Park, Narae Kim, Soonchul Kwon, Jisang Yoo
+### Taesoo Park, Mungwi Jeong, Mingyu Park, Narae Kim, Junyoung Kim, Soonchul Kwon, Jisang Yoo
 
 In our [paper](https://ieeexplore.ieee.org/abstract/document/10920769), We propose BemaGANv2: a GAN-based vocoder optimized for long-term audio generation, leveraging Snake activation and multi-discriminator architectures for enhanced periodicity and fidelity. <br/>
 We provide our implementation and pretrained models as open source in this repository.
@@ -81,4 +81,5 @@ Contributors:
 - [Taesoo Park](https://github.com/dinhoitt)
 - [Narae Kim](https://github.com/wing0529)
 - [Mungwi Jeong](https://github.com/Jeongmungwi)
-- [Mingy Park](https://github.com/mingyu516)
+- [Mingyu Park](https://github.com/mingyu516)
+- Junyoung Kim
