@@ -69,3 +69,16 @@ __validation mel spec error__
     ```
 Generated wav files are saved in `generated_files` by default.<br>
 You can change the path by adding `--output_dir` option.
+
+-------------------
+
+---
+
+**This repository was created with the participation of Capstone Design members from Kwangwoon University.**
+
+
+Contributors:
+- [Taesoo Park](https://github.com/dinhoitt)
+- [Narae Kim](https://github.com/wing0529)
+- [Mungwi Jeong](https://github.com/Jeongmungwi)
+- [Mingy Park](https://github.com/mingyu516)
