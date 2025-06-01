@@ -68,7 +68,7 @@ __validation mel spec error__
     python inference.py --checkpoint_file [generator checkpoint file path]
     ```
 Generated wav files are saved in `generated_files` by default.<br>
-You can change the path by adding `--output_dir` option.
+You can change the path by adding `--input_wavs_dir` , `--output_dir` option.
 
 -------------------
 
