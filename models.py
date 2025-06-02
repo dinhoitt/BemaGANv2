@@ -341,7 +341,7 @@ class MultiResolutionDiscriminator(nn.Module):
 
         return y_d_rs, y_d_gs, fmap_rs, fmap_gs
 
-"""
+
 class DiscriminatorP(torch.nn.Module):
     def __init__(self, period, kernel_size=5, stride=3, use_spectral_norm=False):
         super(DiscriminatorP, self).__init__()
@@ -404,7 +404,7 @@ class MultiPeriodDiscriminator(torch.nn.Module):
 
         return y_d_rs, y_d_gs, fmap_rs, fmap_gs
 
-
+"""
 class DiscriminatorS(torch.nn.Module):
     def __init__(self, use_spectral_norm=False):
         super(DiscriminatorS, self).__init__()
