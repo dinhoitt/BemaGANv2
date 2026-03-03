@@ -5,7 +5,7 @@
 In our [paper](https://arxiv.org/abs/2506.09487), We proposed BemaGANv2: Discriminator Combination Strategies for GAN-based Vocoders in Long-Term Audio Generation <br/>
 We provide our implementation and pretrained models as open source in this repository.
 
-Weprovede our sample testset. [demoweb](https://dinhoitt.github.io/BemaGANv2.github.io)
+We provide our sample testset. [demoweb](https://dinhoitt.github.io/BemaGANv2.github.io)
 
 **Abstract :**
 
