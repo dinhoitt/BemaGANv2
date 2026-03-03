@@ -2,7 +2,7 @@
 
 ### Taesoo Park, Mungwi Jeong, Mingyu Park, Narae Kim, Junyoung Kim, Soonchul Kwon, Jisang Yoo
 
-In our [paper](https://ieeexplore.ieee.org/abstract/document/10920769), We propose BemaGANv2: a GAN-based vocoder optimized for long-term audio generation, leveraging Snake activation and multi-discriminator architectures for enhanced periodicity and fidelity. <br/>
+In our [paper](https://arxiv.org/abs/2506.09487), We proposed BemaGANv2: Discriminator Combination Strategies for GAN-based Vocoders in Long-Term Audio Generation <br/>
 We provide our implementation and pretrained models as open source in this repository.
 
 Weprovede our sample testset. [demoweb](https://dinhoitt.github.io/BemaGANv2.github.io)
